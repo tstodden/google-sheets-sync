@@ -94,7 +94,8 @@ class Converter:
 
     def _cast_dataframe_from_dtype_map(self, df: pd.DataFrame) -> pd.DataFrame:
         for col, dtype in self._config.column_dtype_map.items():
-            df[col] = self._cast_column_to_dtype(df[col], dtype)
+            if col in df.columns:
+                df[col] = self._cast_column_to_dtype(df[col], dtype)
         return df
 
     def _cast_column_to_dtype(self, col: pd.Series, dtype: str) -> pd.Series:
