@@ -17,7 +17,7 @@ class SyncThread(threading.Thread):
         name: str,
         config: Config,
         postgres_controller: PostgresController,
-        spreadsheet_controller: SpreadsheetController
+        spreadsheet_controller: SpreadsheetController,
     ):
         super().__init__(target=self.run, name=name)
         self.config = config
@@ -44,8 +44,9 @@ class SyncThread(threading.Thread):
 
             end = time.perf_counter()
             logging.info(
-                constants.OKGREEN +
-                f"Completed in {end - begin:.2f} sec" + constants.ENDC
+                constants.OKGREEN
+                + f"Completed in {end - begin:.2f} sec"
+                + constants.ENDC
             )
             self._iscomplete = True
         except:
@@ -54,9 +55,7 @@ class SyncThread(threading.Thread):
 
 class SyncThreadFactory:
     def __init__(
-        self,
-        postgres_controller: PostgresController,
-        credentials: OAuthCredentials
+        self, postgres_controller: PostgresController, credentials: OAuthCredentials
     ):
         self.postgres_controller = postgres_controller
         self.credentials = credentials
@@ -66,5 +65,5 @@ class SyncThreadFactory:
             name=name,
             config=config,
             postgres_controller=self.postgres_controller,
-            spreadsheet_controller=SpreadsheetController(self.credentials)
+            spreadsheet_controller=SpreadsheetController(self.credentials),
         )

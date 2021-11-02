@@ -23,8 +23,7 @@ class SpreadsheetResponse:
         value_ranges = self._get_property(self.contents, "valueRanges")
         for rng in value_ranges:
             new_rng = Sheet(
-                title=self._get_range_title(rng),
-                data=self._get_values(rng)
+                title=self._get_range_title(rng), data=self._get_values(rng)
             )
             sheets.append(new_rng)
         return sheets

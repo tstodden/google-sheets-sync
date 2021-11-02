@@ -5,40 +5,29 @@ METADATA = {
     "properties": {"title": "Animal Facts"},
     "sheets": [
         {"properties": {"title": "Sheet1"}},
-        {"properties": {"title": "Sheet2"}}
-    ]
+        {"properties": {"title": "Sheet2"}},
+    ],
 }
 
 CONTENTS = {
-    "valueRanges": [{
-        "range": "Sheet1!A1:Z999",
-        "values": [
-            ["animal", "description"],
-            ["koala", "fuzzy, smol"]
-        ]
-    }, {
-        "range": "Sheet2!A1:Z999",
-        "values": [
-            ["animal", "description"],
-            ["elephant", "big nose, jumbo"]
-        ]
-    }]
+    "valueRanges": [
+        {
+            "range": "Sheet1!A1:Z999",
+            "values": [["animal", "description"], ["koala", "fuzzy, smol"]],
+        },
+        {
+            "range": "Sheet2!A1:Z999",
+            "values": [["animal", "description"], ["elephant", "big nose, jumbo"]],
+        },
+    ]
 }
 
 EXPECTED_SHEET_1 = Sheet(
-    title="Sheet1",
-    data=[
-        ["animal", "description"],
-        ["koala", "fuzzy, smol"]
-    ]
+    title="Sheet1", data=[["animal", "description"], ["koala", "fuzzy, smol"]]
 )
 
 EXPECTED_SHEET_2 = Sheet(
-    title="Sheet2",
-    data=[
-        ["animal", "description"],
-        ["elephant", "big nose, jumbo"]
-    ]
+    title="Sheet2", data=[["animal", "description"], ["elephant", "big nose, jumbo"]]
 )
 
 

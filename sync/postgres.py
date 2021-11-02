@@ -30,10 +30,8 @@ class PostgresController:
         try:
             conn = self._dbpool.getconn()
             curs = conn.cursor()
-            fields = ','.join(config.validate_fields)
-            curs.execute(
-                f"SELECT DISTINCT {fields} FROM {config.validate_target};"
-            )
+            fields = ",".join(config.validate_fields)
+            curs.execute(f"SELECT DISTINCT {fields} FROM {config.validate_target};")
             values = curs.fetchall()
             conn.commit()
         except:
@@ -56,7 +54,7 @@ class PostgresController:
 
     def _insert_dataframe_into_target(self, curs, target: str, df: pd.DataFrame) -> str:
         tuples = df.itertuples(index=False, name=None)
-        cols = ','.join(list(df.columns))
+        cols = ",".join(list(df.columns))
         query = f"INSERT INTO {target} ({cols}) VALUES %s"
         extras.execute_values(curs, query, tuples, page_size=800)
 

@@ -9,8 +9,7 @@ class DataSet(NamedTuple):
 
     def __eq__(self, other):
         if isinstance(other, DataSet):
-            return self.name == other.name and \
-                self.dataframe.equals(other.dataframe)
+            return self.name == other.name and self.dataframe.equals(other.dataframe)
         return False
 
 

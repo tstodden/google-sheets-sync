@@ -17,13 +17,11 @@ class ApplicationService:
 
     def queueThreads(self):
         factory = SyncThreadFactory(
-            postgres_controller=self._postgres_controller,
-            credentials=self._creds.oauth
+            postgres_controller=self._postgres_controller, credentials=self._creds.oauth
         )
         for name in self._config:
             thread = factory.create_thread(
-                name=name,
-                config=Config(config=self._config[name])
+                name=name, config=Config(config=self._config[name])
             )
             self._threads.append(thread)
             logging.info(f"{name} queued")
@@ -42,9 +40,9 @@ class ApplicationService:
             )
         if failed > 0:
             logging.error(
-                constants.FAIL +
-                f"{failed}/{len(self._threads)} threads failed" +
-                constants.ENDC
+                constants.FAIL
+                + f"{failed}/{len(self._threads)} threads failed"
+                + constants.ENDC
             )
 
     def _complete(self) -> Tuple[int, int]:

@@ -11,8 +11,8 @@ class Validator:
 
     def validate(self, dataset: DataSet) -> DataSet:
         title, df = dataset
-        df["validate"] = list(df[self.validation_fields].itertuples(
-            index=False, name=None)
+        df["validate"] = list(
+            df[self.validation_fields].itertuples(index=False, name=None)
         )
         df = df.where(df.validate.isin(self.values)).dropna(how="all")
         df = df.drop(columns=["validate"])

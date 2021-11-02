@@ -22,8 +22,7 @@ class Credentials(NamedTuple):
 class CredentialsController:
     def get(self) -> Credentials:
         credentials = Credentials(
-            postgres=PostgresCredentials(),
-            oauth=self._get_creds_from_google()
+            postgres=PostgresCredentials(), oauth=self._get_creds_from_google()
         )
         return credentials
 

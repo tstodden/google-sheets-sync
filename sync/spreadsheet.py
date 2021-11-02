@@ -25,8 +25,7 @@ class SpreadsheetController:
         try:
             params = {"fields": "properties.title,sheets.properties.title"}
             response = self._session.get(
-                f"https://sheets.googleapis.com/v4/spreadsheets/{id_}",
-                params=params
+                f"https://sheets.googleapis.com/v4/spreadsheets/{id_}", params=params
             )
         except:
             logging.exception("Error executing API request")
@@ -34,13 +33,10 @@ class SpreadsheetController:
 
     def _get_spreadsheet_contents(self, id_: str, sheets: List[str]) -> dict:
         try:
-            params = {
-                "fields": "valueRanges(range,values)",
-                "ranges": sheets
-            }
+            params = {"fields": "valueRanges(range,values)", "ranges": sheets}
             response = self._session.get(
                 f"https://sheets.googleapis.com/v4/spreadsheets/{id_}/values:batchGet",
-                params=params
+                params=params,
             )
         except:
             logging.exception("Error executing API request")

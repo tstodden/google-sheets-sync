@@ -25,9 +25,7 @@ class Converter:
             ds = self._convert_sheet_to_dataset(sht)
             ds, dups = self._clean_dataset(ds)
             if dups > 0:
-                logging.warning(
-                    f"Removed {dups} duplicate(s) from {sht.title}"
-                )
+                logging.warning(f"Removed {dups} duplicate(s) from {sht.title}")
             if self._config.validate:
                 ds = self._validator.validate(ds)
             sets.append(ds)
