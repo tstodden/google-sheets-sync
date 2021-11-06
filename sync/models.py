@@ -1,3 +1,4 @@
+import uuid
 from dataclasses import dataclass
 from typing import List, NamedTuple, Dict
 
@@ -19,6 +20,18 @@ class Task:
 
     def __setitem__(self, key, new_value):
         self.__dict__[key] = new_value
+
+    @classmethod
+    def from_json(cls, json):
+        return cls(
+            uuid=str(uuid.uuid4()),
+            spreadsheet_id=json["spreadsheet_id"],
+            target=json["target"],
+            columns=json["columns"],
+            keys=json.get("keys"),
+            column_name_map=json.get("column_name_map"),
+            column_dtype_map=json.get("column_dtype_map"),
+        )
 
 
 class DataSet(NamedTuple):

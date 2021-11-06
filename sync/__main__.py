@@ -13,7 +13,7 @@ async def create_task(request: web.Request) -> web.Response:
     try:
         task = await request.app["task"].create_task(json)
     except KeyError as e:
-        return web.json_response({"error": f"message: {e}"})
+        return web.json_response({"error": str(e)})
     else:
         return web.json_response(task.__dict__)
 
@@ -23,7 +23,7 @@ async def get_task(request: web.Request) -> web.Response:
     try:
         task = await request.app["task"].get_task(request.match_info["id_"])
     except NameError as e:
-        return web.json_response({"error": f"message: {e}"})
+        return web.json_response({"error": str(e)})
     else:
         return web.json_response(task.__dict__)
 
@@ -34,7 +34,7 @@ async def update_task(request: web.Request) -> web.Response:
     try:
         task = await request.app["task"].update_task(request.match_info["id_"], json)
     except Exception as e:
-        return web.json_response({"error": f"message: {e}"})
+        return web.json_response({"error": str(e)})
     else:
         return web.json_response(task.__dict__)
 
