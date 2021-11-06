@@ -22,6 +22,12 @@ async def create_task(request: web.Request) -> web.Response:
     return web.json_response(task.__dict__)
 
 
+@routes.delete("/task/{id_}")
+async def delete_task(request: web.Request) -> web.Response:
+    await request.app["task"].delete_task(request.match_info["id_"])
+    return web.Response()
+
+
 async def task_controller(app):
     connection = await aiosqlite.connect("tasks.db")
     app["task"] = TaskController(connection)

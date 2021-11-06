@@ -49,7 +49,8 @@ class TaskController:
         pass
 
     async def delete_task(self, id_) -> None:
-        pass
+        await self.connection.execute("DELETE FROM tasks WHERE uuid = ?;", (id_,))
+        await self.connection.commit()
 
     async def get_all_tasks(self) -> List[Task]:
         pass
