@@ -14,6 +14,12 @@ class Task:
     column_name_map: Dict[str, str] | None
     column_dtype_map: Dict[str, str] | None
 
+    def __getitem__(self, key):
+        return self.__dict__[key]
+
+    def __setitem__(self, key, new_value):
+        self.__dict__[key] = new_value
+
 
 class DataSet(NamedTuple):
     name: str
