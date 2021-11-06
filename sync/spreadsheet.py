@@ -2,9 +2,9 @@ import logging
 from typing import List
 
 from google.auth.credentials import Credentials as OAuthCredentials
-from google.auth.transport.requests import AuthorizedSession
+from google.auth.transport._aiohttp_requests import AuthorizedSession
 
-from .response import SpreadsheetResponse
+from sync.response import SpreadsheetResponse
 
 
 class SpreadsheetController:
@@ -12,32 +12,42 @@ class SpreadsheetController:
         self.creds = creds
         self._session = AuthorizedSession(creds)
 
-    def get_spreadsheet(self, id_: str) -> SpreadsheetResponse:
-        metadata = self._get_spreadsheet_metadata(id_)
+    async def close(self):
+        await self._session.close()
+
+    async def get_spreadsheet(self, id_: str) -> SpreadsheetResponse:
+        metadata = await self._get_spreadsheet_metadata(id_)
         response = SpreadsheetResponse(metadata=metadata)
-        contents = self._get_spreadsheet_contents(
+        contents = await self._get_spreadsheet_contents(
             id_=id_, sheets=response.get_sheet_titles()
         )
         response.set_contents(contents)
         return response
 
-    def _get_spreadsheet_metadata(self, id_: str) -> dict:
+    async def _get_spreadsheet_metadata(self, id_: str) -> dict:
+        params = {"fields": "properties.title,sheets.properties.title"}
         try:
-            params = {"fields": "properties.title,sheets.properties.title"}
-            response = self._session.get(
+            async with self._session.get(
                 f"https://sheets.googleapis.com/v4/spreadsheets/{id_}", params=params
-            )
+            ) as resp:
+                assert resp.status == 200
+                response = await resp.json()
         except:
-            logging.exception("Error executing API request")
-        return response.json()
+            raise
+        else:
+            return response.json()
 
-    def _get_spreadsheet_contents(self, id_: str, sheets: List[str]) -> dict:
+    async def _get_spreadsheet_contents(self, id_: str, sheets: List[str]) -> dict:
+        params = {"fields": "valueRanges(range,values)", "ranges": sheets}
         try:
-            params = {"fields": "valueRanges(range,values)", "ranges": sheets}
-            response = self._session.get(
+
+            async with self._session.get(
                 f"https://sheets.googleapis.com/v4/spreadsheets/{id_}/values:batchGet",
                 params=params,
-            )
+            ) as resp:
+                assert resp.status == 200
+                response = await resp.json()
         except:
-            logging.exception("Error executing API request")
-        return response.json()
+            raise
+        else:
+            return response.json()

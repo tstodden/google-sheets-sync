@@ -1,48 +1,36 @@
-import logging
-import time
-import asyncio
+import aiosqlite
+from aiohttp import web
 
-import yaml
-
-from sync.config import Config
-from sync.converter import create_converter
-from sync.postgres import PostgresController
-from sync.spreadsheet import SpreadsheetController
-from .auth import CredentialsController
-from .constants import CONFIG_PATH, LOG_MSG_FORMAT
+from sync.task import TaskController
 
 
-logging.basicConfig(format=LOG_MSG_FORMAT, level=logging.INFO)
-
-creds = CredentialsController().get()
-spreadsheet_controller = SpreadsheetController(creds.oauth)
-postgres_controller = PostgresController(creds.postgres)
+routes = web.RouteTableDef()
 
 
-async def run(config: Config, begin: float) -> None:
-    try:
-        response = spreadsheet_controller.get_spreadsheet(id_=config.spreadsheet_id)
-        converter = create_converter(config)
-        if config.validate:
-            validator = postgres_controller.get_validator(config)
-            converter.set_validator(validator)
-        sets = converter.convert(response.get_sheets())
-        postgres_controller.update(config.target, sets)
-
-        end = time.perf_counter()
-        logging.info(f"Completed in {end - begin:.2f} sec")
-    except:
-        logging.exception("Failed")
+@routes.get("/task/{id_}")
+async def get_task(request: web.Request) -> web.Response:
+    task = await request.app["task"].get_task(request.match_info["id_"])
+    if task:
+        return web.json_response(task.__dict__)
+    return web.json_response({"error": "no task found"})
 
 
-async def main():
-    with open(CONFIG_PATH, "r") as f:
-        config_file = yaml.full_load(f)
-    config_list = [Config(config_file[job]) for job in config_file]
-
-    begin = time.perf_counter()
-    asyncio.gather(*[run(config, begin) for config in config_list])
+@routes.post("/task")
+async def create_task(request: web.Request) -> web.Response:
+    json = await request.json()
+    task = await request.app["task"].create_task(json)
+    return web.json_response(task.__dict__)
 
 
-if __name__ == "__main__":
-    asyncio.run(main())
+async def task_controller(app):
+    connection = await aiosqlite.connect("tasks.db")
+    app["task"] = TaskController(connection)
+    await app["task"].initialize_database()
+    yield
+    await connection.close()
+
+
+app = web.Application()
+app.add_routes(routes)
+app.cleanup_ctx.append(task_controller)
+web.run_app(app)
