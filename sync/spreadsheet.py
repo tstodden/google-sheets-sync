@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import logging
 import json
 from typing import List, Dict
@@ -14,26 +15,18 @@ OAUTH_SCOPES = [
 ]
 
 
+@dataclass
 class SpreadsheetMetadata:
-    def __init__(self, metadata: dict):
-        self.metadata = metadata
+    metadata: dict
 
     def get_sheet_title_list(self) -> List[str]:
         sheet_list = self.metadata["sheets"]
         return [sheet["properties"]["title"] for sheet in sheet_list]
 
-    def __eq__(self, other):
-        if isinstance(other, SpreadsheetMetadata):
-            return self.metadata == other.metadata
-        return False
 
-    def __repr__(self):
-        return f"SpreadsheetMetadata<metadata={self.metadata}>"
-
-
+@dataclass
 class SpreadsheetContent:
-    def __init__(self, content: dict):
-        self.content = content
+    content: dict
 
     def get_sheet_list(self) -> List[Sheet]:
         sheet_list = []
@@ -44,27 +37,11 @@ class SpreadsheetContent:
             sheet_list.append(Sheet(title, values))
         return sheet_list
 
-    def __eq__(self, other):
-        if isinstance(other, SpreadsheetContent):
-            return self.content == other.content
-        return False
 
-    def __repr__(self):
-        return f"SpreadsheetContent<content={self.content}>"
-
-
+@dataclass
 class Spreadsheet:
-    def __init__(self, metadata: SpreadsheetMetadata, content: SpreadsheetContent):
-        self.metadata = metadata
-        self.content = content
-
-    def __eq__(self, other):
-        if isinstance(other, Spreadsheet):
-            return self.metadata == other.metadata and self.content == other.content
-        return False
-
-    def __repr__(self):
-        return f"Spreadsheet<metadata={self.metadata}, content={self.content}>"
+    metadata: SpreadsheetMetadata
+    content: SpreadsheetContent
 
 
 class SpreadsheetController:
