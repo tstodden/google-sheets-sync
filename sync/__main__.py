@@ -1,6 +1,10 @@
 import aiosqlite
 from aiohttp import web
 
+from google.oauth2._service_account_async import Credentials
+from google.auth.transport._aiohttp_requests import AuthorizedSession
+
+from sync.spreadsheet import SpreadsheetController, OAUTH_SCOPES
 from sync.task import TaskController
 
 
@@ -60,7 +64,18 @@ async def task_controller(app):
     await connection.close()
 
 
+async def spreadsheet_controller(app):
+    credentials = Credentials.from_service_account_file(
+        "service-account.json", scopes=OAUTH_SCOPES
+    )
+    session = AuthorizedSession(credentials)
+    app["spreadsheet"] = SpreadsheetController(session)
+    yield
+    await app["spreadsheet"].close()
+
+
 app = web.Application()
 app.add_routes(routes)
 app.cleanup_ctx.append(task_controller)
+app.cleanup_ctx.append(spreadsheet_controller)
 web.run_app(app)

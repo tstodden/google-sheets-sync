@@ -4,10 +4,10 @@ from typing import List, Tuple
 import numpy as np
 import pandas as pd
 
-from .config import Config
-from .models import DataSet
-from .response import Sheet
-from .validator import Validator
+from sync.config import Config
+from sync.models import DataSet
+from sync.models import Sheet
+from sync.validator import Validator
 
 NUMERIC = ["float", "int"]
 
