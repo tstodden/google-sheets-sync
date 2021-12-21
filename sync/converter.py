@@ -1,114 +1,130 @@
-import logging
-from typing import List, Tuple
-
-import numpy as np
 import pandas as pd
 
 from sync.config import Config
 from sync.models import DataSet
 from sync.models import Sheet
-from sync.validator import Validator
-
-NUMERIC = ["float", "int"]
 
 
 class Converter:
     def __init__(self, config: Config):
-        self._config = config
+        self.config = config
 
-    def set_validator(self, validator: Validator):
-        self._validator = validator
+    def convert(self, sheet_list: list[Sheet]) -> list[DataSet]:
+        return [self._convert(sheet) for sheet in sheet_list]
 
-    def convert(self, sheets: List[Sheet]) -> List[DataSet]:
-        sets: List[DataSet] = []
-        for sht in sheets:
-            ds = self._convert_sheet_to_dataset(sht)
-            ds, dups = self._clean_dataset(ds)
-            if dups > 0:
-                logging.warning(f"Removed {dups} duplicate(s) from {sht.title}")
-            if self._config.validate:
-                ds = self._validator.validate(ds)
-            sets.append(ds)
-        return sets
+    def _convert(self, sheet: Sheet) -> DataSet:
+        title, data = sheet
+        header_list, *data = data
 
-    def _clean_dataset(self, ds: DataSet) -> Tuple[DataSet, int]:
-        ds = self._remove_duplicate_cols(ds)
-        ds = self._rename_columns(ds)
-        ds = self._assign_custom_values(ds)
-        ds, dups = self._remove_duplicates(ds)
-        ds = self._convert_dtypes(ds)
-        ds = self._reorder_columns(ds)
-        return ds, dups
+        if self.config.column_name_map:
+            header_list = self._rename_header_list(header_list)
 
-    def _convert_sheet_to_dataset(self, sheet: Sheet) -> DataSet:
-        df = pd.DataFrame(sheet.data, columns=sheet.data[0])
-        df = df.drop(df.index[0]).reset_index(drop=True)
-        return DataSet(name=sheet.title, dataframe=df)
+        # create DataFrame
+        data = self._resize_first_row(data, header_list)
+        df = pd.DataFrame(data, columns=header_list)
 
-    def _remove_duplicate_cols(self, dataset: DataSet) -> DataSet:
-        title, df = dataset
+        # general cleanup
+        df = self._empty_string_to_none(df)
+        df = self._remove_duplicate_columns(df)
+
+        if self.config.keys:
+            df = self._remove_duplicate_keys(df)
+
+        if self.config.column_dtype_map:
+            df = self._convert_dtype_from_map(df)
+
+        if self.config.custom_values:
+            df = self._assign_custom_values(df)
+
+        df = self._reorder_columns(df)
+        # finally replace all NA values to None to become NULL
+        df = self._all_na_to_none(df)
+        return DataSet(name=title, dataframe=df)
+
+    def _rename_header_list(self, header_list: list[str]) -> list[str]:
+        name_map = self.config.column_name_map or {}
+        for i, header in enumerate(header_list):
+            header_list[i] = name_map[header] if header in name_map else header
+        return header_list
+
+    def _resize_first_row(
+        self, data: list[list[str]], header_list: list[str]
+    ) -> list[list[str]]:
+        first_row = data[0] if len(data) > 0 else []
+        while len(first_row) < len(header_list):
+            first_row.append("")
+        return data
+
+    def _empty_string_to_none(self, df: pd.DataFrame) -> pd.DataFrame:
+        return df.applymap(lambda x: x if x else None)
+
+    def _remove_duplicate_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.loc[:, ~df.columns.duplicated()]
-        return DataSet(name=title, dataframe=df)
-
-    def _rename_columns(self, dataset: DataSet) -> DataSet:
-        title, df = dataset
-        if self._config.column_name_map:
-            df = df.rename(columns=self._config.column_name_map)
-        return DataSet(name=title, dataframe=df)
-
-    def _assign_custom_values(self, dataset: DataSet) -> DataSet:
-        title, df = dataset
-        if self._config.custom_values:
-            df = df.assign(**self._config.custom_values)
-        return DataSet(name=title, dataframe=df)
-
-    def _convert_dtypes(self, dataset: DataSet) -> DataSet:
-        title, df = dataset
-        if self._config.column_dtype_map:
-            df = self._cast_dataframe_from_dtype_map(df)
-        return DataSet(name=title, dataframe=df)
-
-    def _remove_duplicates(self, dataset: DataSet) -> Tuple[DataSet, int]:
-        title, df = dataset
-        dups = 0
-        if self._config.keys:
-            count = len(df.index)
-            df = self._remove_empty_keys(df)
-            df = df.drop_duplicates(subset=self._config.keys)
-            dups = count - len(df.index)
-        return DataSet(name=title, dataframe=df), dups
-
-    def _reorder_columns(self, dataset: DataSet) -> DataSet:
-        title, df = dataset
-        df = df.replace(r"^\s*$", np.nan, regex=True)
-        df = df.reindex(columns=self._config.columns)
-        df = df.astype(object).where(df.notnull(), None)
-        return DataSet(name=title, dataframe=df)
-
-    def _remove_empty_keys(self, df: pd.DataFrame) -> pd.DataFrame:
-        df = df.replace("", np.nan)
-        df = df.dropna(subset=self._config.keys)
         return df
 
-    def _cast_dataframe_from_dtype_map(self, df: pd.DataFrame) -> pd.DataFrame:
-        for col, dtype in self._config.column_dtype_map.items():
-            if col in df.columns:
-                df[col] = self._cast_column_to_dtype(df[col], dtype)
+    def _remove_duplicate_keys(self, df: pd.DataFrame) -> pd.DataFrame:
+        key_list = self.config.keys or []
+        df = df.dropna(subset=key_list)  # drop empty keys
+        df = df.drop_duplicates(subset=key_list)
         return df
 
-    def _cast_column_to_dtype(self, col: pd.Series, dtype: str) -> pd.Series:
-        if dtype in NUMERIC:
-            col = col.str.replace("$", "", regex=False)
-            col = col.str.replace(",", "", regex=False)
-            col = col.str.replace("#", "", regex=False)
-            col = col.replace("", np.nan)
-        col = col.astype(dtype)
+    def _convert_dtype_from_map(self, df: pd.DataFrame) -> pd.DataFrame:
+        dtype_map = self.config.column_dtype_map or {}
+        for col_name, dtype in dtype_map.items():
+            col = df.get(col_name)
+            if col is None:
+                continue  # skip converstion if col doesn't exist
+            df[col_name] = self._convert_column_dtype(col, dtype)
+        return df
+
+    def _convert_column_dtype(self, col: pd.Series, dtype: str) -> pd.Series:
+        if dtype == "int":
+            col = col.map(_try_convert_string_to_int)
+        elif dtype == "float":
+            col = col.map(_try_convert_string_to_float)
+        elif dtype == "datetime":
+            col = col.map(_try_convert_string_to_datetime)
+        else:
+            raise NotImplementedError(f"dtype {dtype} is not valid")
         return col
+
+    def _assign_custom_values(self, df: pd.DataFrame) -> pd.DataFrame:
+        custom_values = self.config.custom_values or {}
+        return df.assign(**custom_values)
+
+    def _reorder_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        return df.reindex(columns=self.config.columns)
+
+    def _all_na_to_none(self, df: pd.DataFrame) -> pd.DataFrame:
+        return df.astype(object).where(df.notnull(), None)
+
+
+def _try_convert_string_to_float(string: str) -> float | None:
+    clean_string = _clean_numeric_string(string)
+    return float(clean_string) if clean_string else None
+
+
+def _try_convert_string_to_int(string: str) -> int | None:
+    flt = _try_convert_string_to_float(string)
+    return int(flt) if flt else None
+
+
+def _try_convert_string_to_datetime(string: str) -> str | None:
+    string = pd.Timestamp(string, tz="UTC").isoformat()
+    return string if string != "NaT" else None
+
+
+def _clean_numeric_string(string: str) -> str:
+    clean_string = ""
+    string = string or ""
+    for c in string:
+        clean_string += c if c not in ["#", "$", ","] else ""
+    return clean_string
 
 
 def create_converter(config: Config) -> Converter:
     if not config.type:
         converter = Converter(config)
     else:
-        raise NotImplementedError()
+        raise NotImplementedError("{config.type} is not a valid type")
     return converter

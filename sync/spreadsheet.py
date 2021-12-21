@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 import logging
 import json
-from typing import List, Dict
 
 from google.auth.transport._aiohttp_requests import AuthorizedSession, _CombinedResponse
 
@@ -19,7 +18,7 @@ OAUTH_SCOPES = [
 class SpreadsheetMetadata:
     metadata: dict
 
-    def get_sheet_title_list(self) -> List[str]:
+    def get_sheet_title_list(self) -> list[str]:
         sheet_list = self.metadata["sheets"]
         return [sheet["properties"]["title"] for sheet in sheet_list]
 
@@ -28,7 +27,7 @@ class SpreadsheetMetadata:
 class SpreadsheetContent:
     content: dict
 
-    def get_sheet_list(self) -> List[Sheet]:
+    def get_sheet_list(self) -> list[Sheet]:
         sheet_list = []
         value_range_list = self.content["valueRanges"]
         for range_ in value_range_list:
@@ -71,14 +70,14 @@ class SpreadsheetController:
         return SpreadsheetMetadata(resp)
 
     async def _get_spreadsheet_contents(
-        self, id_: str, sheets: List[str]
+        self, id_: str, sheets: list[str]
     ) -> SpreadsheetContent:
         url = SHEETS_URL + f"/{id_}/values:batchGet"
         params = {"fields": "valueRanges(range,values)", "ranges": sheets}
         resp = await self._try_get(url, params)
         return SpreadsheetContent(resp)
 
-    async def _try_get(self, url: str, params: Dict[str, str]) -> dict:
+    async def _try_get(self, url: str, params: dict[str, str]) -> dict:
         logging.info({"requesting": url, "fields": params})
         try:
             resp = await self.session.request("GET", url, params=params)
@@ -89,4 +88,6 @@ class SpreadsheetController:
             raise
         else:
             data = await resp.content()
+            if not data:
+                raise ValueError("GET {url} response empty")
             return json.loads(data.decode("utf-8"))

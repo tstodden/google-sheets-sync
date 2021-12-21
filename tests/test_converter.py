@@ -1,5 +1,4 @@
 from sync.converter import create_converter
-from sync.validator import Validator
 
 from . import data
 
@@ -68,13 +67,3 @@ class TestConverter:
         want = [data.RENAME_RESULT]
         assert got == want
 
-    def test_conversion_with_validation(self):
-        sheets = [data.VALIDATE_SHEET]
-        validator = Validator(data.VALIDATE_CONFIG, {("koala",)})
-        sut = create_converter(data.VALIDATE_CONFIG)
-        sut.set_validator(validator)
-
-        got = sut.convert(sheets)
-
-        want = [data.VALIDATE_RESULT]
-        assert got == want

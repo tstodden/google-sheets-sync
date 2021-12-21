@@ -70,7 +70,7 @@ DATATYPE_CONFIG = Config(
     {
         "columns": ["animal", "description", "last_seen", "lifespan"],
         "keys": ["animal"],
-        "column_dtype_map": {"last_seen": "datetime64", "lifespan": "float"},
+        "column_dtype_map": {"last_seen": "datetime", "lifespan": "float"},
     }
 )
 
@@ -88,11 +88,10 @@ DATATYPE_MAP_RESULT = DataSet(
     dataframe=pd.DataFrame(
         columns=["animal", "description", "last_seen", "lifespan"],
         data=[
-            ["koala", "fuzzy, smol", "2021-01-08", "15.07"],
-            ["elephant", "big nose, jumbo", "2020-03-05", "65.74"],
+            ["koala", "fuzzy, smol", "2021-01-08T00:00:00+00:00", 15.07],
+            ["elephant", "big nose, jumbo", "2020-03-05T00:00:00+00:00", 65.74],
         ],
     )
-    .astype({"last_seen": "datetime64", "lifespan": "float"})
     .astype(object),
 )
 

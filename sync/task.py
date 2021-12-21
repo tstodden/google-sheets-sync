@@ -1,5 +1,4 @@
 import pickle
-import uuid
 from typing import List
 
 from aiosqlite import Connection
