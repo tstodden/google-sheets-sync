@@ -1,13 +1,12 @@
 import pandas as pd
 
-from sync.config import Config
 from sync.models import DataSet
-from sync.models import Sheet
+from sync.models import Sheet, DataType, Task
 
 
 class Converter:
-    def __init__(self, config: Config):
-        self.config = config
+    def __init__(self, task: Task):
+        self.task = task
 
     def convert(self, sheet_list: list[Sheet]) -> list[DataSet]:
         return [self._convert(sheet) for sheet in sheet_list]
@@ -16,7 +15,7 @@ class Converter:
         title, data = sheet
         header_list, *data = data
 
-        if self.config.column_name_map:
+        if self.task.column_rename_map:
             header_list = self._rename_header_list(header_list)
 
         # create DataFrame
@@ -27,14 +26,10 @@ class Converter:
         df = self._empty_string_to_none(df)
         df = self._remove_duplicate_columns(df)
 
-        if self.config.keys:
+        if self.task.key_list:
             df = self._remove_duplicate_keys(df)
 
-        if self.config.column_dtype_map:
-            df = self._convert_dtype_from_map(df)
-
-        if self.config.custom_values:
-            df = self._assign_custom_values(df)
+        df = self._convert_dtype_from_def(df)
 
         df = self._reorder_columns(df)
         # finally replace all NA values to None to become NULL
@@ -42,9 +37,9 @@ class Converter:
         return DataSet(name=title, dataframe=df)
 
     def _rename_header_list(self, header_list: list[str]) -> list[str]:
-        name_map = self.config.column_name_map or {}
+        rename_map = self.task.column_rename_map or {}
         for i, header in enumerate(header_list):
-            header_list[i] = name_map[header] if header in name_map else header
+            header_list[i] = rename_map[header] if header in rename_map else header
         return header_list
 
     def _resize_first_row(
@@ -63,37 +58,35 @@ class Converter:
         return df
 
     def _remove_duplicate_keys(self, df: pd.DataFrame) -> pd.DataFrame:
-        key_list = self.config.keys or []
+        key_list = self.task.key_list or []
         df = df.dropna(subset=key_list)  # drop empty keys
         df = df.drop_duplicates(subset=key_list)
         return df
 
-    def _convert_dtype_from_map(self, df: pd.DataFrame) -> pd.DataFrame:
-        dtype_map = self.config.column_dtype_map or {}
-        for col_name, dtype in dtype_map.items():
+    def _convert_dtype_from_def(self, df: pd.DataFrame) -> pd.DataFrame:
+        column_def = self.task.column_def
+        for col_name, dtype in column_def.items():
             col = df.get(col_name)
             if col is None:
                 continue  # skip converstion if col doesn't exist
             df[col_name] = self._convert_column_dtype(col, dtype)
         return df
 
-    def _convert_column_dtype(self, col: pd.Series, dtype: str) -> pd.Series:
-        if dtype == "int":
+    def _convert_column_dtype(self, col: pd.Series, dtype: DataType) -> pd.Series:
+        if dtype == DataType.STRING:
+            return col  # no op
+        if dtype == DataType.INT:
             col = col.map(_try_convert_string_to_int)
-        elif dtype == "float":
+        elif dtype == DataType.FLOAT:
             col = col.map(_try_convert_string_to_float)
-        elif dtype == "datetime":
+        elif dtype == DataType.DATETIME:
             col = col.map(_try_convert_string_to_datetime)
         else:
             raise NotImplementedError(f"dtype {dtype} is not valid")
         return col
 
-    def _assign_custom_values(self, df: pd.DataFrame) -> pd.DataFrame:
-        custom_values = self.config.custom_values or {}
-        return df.assign(**custom_values)
-
     def _reorder_columns(self, df: pd.DataFrame) -> pd.DataFrame:
-        return df.reindex(columns=self.config.columns)
+        return df.reindex(columns=self.task.column_def.keys())
 
     def _all_na_to_none(self, df: pd.DataFrame) -> pd.DataFrame:
         return df.astype(object).where(df.notnull(), None)
@@ -120,11 +113,3 @@ def _clean_numeric_string(string: str) -> str:
     for c in string:
         clean_string += c if c not in ["#", "$", ","] else ""
     return clean_string
-
-
-def create_converter(config: Config) -> Converter:
-    if not config.type:
-        converter = Converter(config)
-    else:
-        raise NotImplementedError("{config.type} is not a valid type")
-    return converter

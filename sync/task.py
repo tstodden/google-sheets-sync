@@ -7,11 +7,10 @@ from sync.models import Task
 
 MUTABLE_FIELDS = [
     "spreadsheet_id",
-    "target",
-    "columns",
-    "keys",
-    "column_name_map",
-    "column_dtype_map",
+    "table",
+    "column_def",
+    "key_list",
+    "column_rename_map",
 ]
 
 
@@ -20,7 +19,7 @@ class TaskController:
         self.connection = connection
 
     async def create_task(self, json: dict) -> Task:
-        task = Task.from_json(json)
+        task = Task.from_dict(json)
         try:
             await self._insert_new_task(task)
         except:

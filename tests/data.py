@@ -1,8 +1,14 @@
 import pandas as pd
-from sync.config import Config
-from sync.models import DataSet, Sheet
+from sync.models import DataSet, Sheet, Task, DataType
 
-BASIC_CONFIG = Config({"columns": ["animal", "description"], "keys": ["animal"]})
+BASIC_TASK = Task.from_dict(
+    {
+        "spreadsheet_id": "1",
+        "table": "test",
+        "column_def": {"animal": DataType.STRING, "description": DataType.STRING},
+        "key_list": ["animal"],
+    }
+)
 
 BASIC_SHEET = Sheet(
     title="Sheet1",
@@ -44,7 +50,17 @@ DUPLICATE_SHEET = Sheet(
 
 DUPLICATE_RESULT = MISSING_KEY_RESULT
 
-MISSING_CONFIG = Config({"columns": ["animal", "description", "friends"]})
+MISSING_TASK = Task.from_dict(
+    {
+        "spreadsheet_id": "1",
+        "table": "test",
+        "column_def": {
+            "animal": DataType.STRING,
+            "description": DataType.STRING,
+            "friends": DataType.STRING,
+        },
+    }
+)
 
 MISSING_VALUE_SHEET = Sheet(
     title="Sheet1",
@@ -66,11 +82,17 @@ MISSING_VALUE_RESULT = DataSet(
     ),
 )
 
-DATATYPE_CONFIG = Config(
+DATATYPE_TASK = Task.from_dict(
     {
-        "columns": ["animal", "description", "last_seen", "lifespan"],
-        "keys": ["animal"],
-        "column_dtype_map": {"last_seen": "datetime", "lifespan": "float"},
+        "spreadsheet_id": "1",
+        "table": "test",
+        "column_def": {
+            "animal": DataType.STRING,
+            "description": DataType.STRING,
+            "last_seen": DataType.DATETIME,
+            "lifespan": DataType.FLOAT,
+        },
+        "key_list": ["animal"],
     }
 )
 
@@ -91,26 +113,16 @@ DATATYPE_MAP_RESULT = DataSet(
             ["koala", "fuzzy, smol", "2021-01-08T00:00:00+00:00", 15.07],
             ["elephant", "big nose, jumbo", "2020-03-05T00:00:00+00:00", 65.74],
         ],
-    )
-    .astype(object),
+    ).astype(object),
 )
 
-CUSTOM_VALUE_CONFIG = Config(
-    {"columns": ["animal", "description"], "custom_values": {"description": "fav 💖"}}
-)
-
-CUSTOM_VALUE_SHEET = Sheet(title="Sheet1", data=[["animal"], ["koala"], ["elephant"]])
-
-CUSTOM_VALUE_RESULT = DataSet(
-    name="Sheet1",
-    dataframe=pd.DataFrame(
-        columns=["animal", "description"],
-        data=[["koala", "fav 💖"], ["elephant", "fav 💖"]],
-    ),
-)
-
-RENAME_CONFIG = Config(
-    {"columns": ["animal", "description"], "column_name_map": {"Pokemon": "animal"}}
+RENAME_TASK = Task.from_dict(
+    {
+        "spreadsheet_id": "1",
+        "table": "test",
+        "column_def": {"animal": DataType.STRING, "description": DataType.STRING},
+        "column_rename_map": {"Pokemon": "animal"},
+    }
 )
 
 RENAME_SHEET = Sheet(
@@ -127,22 +139,5 @@ RENAME_RESULT = DataSet(
     dataframe=pd.DataFrame(
         columns=["animal", "description"],
         data=[["koala", "fuzzy, smol"], ["elephant", "big nose, jumbo"]],
-    ),
-)
-
-VALIDATE_CONFIG = Config(
-    {
-        "columns": ["animal", "description"],
-        "keys": ["animal"],
-        "validate": ["animal"],
-    }
-)
-
-VALIDATE_SHEET = BASIC_SHEET
-
-VALIDATE_RESULT = DataSet(
-    name="Sheet1",
-    dataframe=pd.DataFrame(
-        columns=["animal", "description"], data=[["koala", "fuzzy, smol"]]
     ),
 )
