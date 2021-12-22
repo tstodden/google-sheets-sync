@@ -1,4 +1,3 @@
-import aiosqlite
 from aiohttp import web
 
 from google.oauth2._service_account_async import Credentials
@@ -57,11 +56,9 @@ async def get_all_tasks(request: web.Request) -> web.Response:
 
 
 async def task_controller(app):
-    connection = await aiosqlite.connect("tasks.db")
-    app["task"] = TaskController(connection)
-    await app["task"].initialize_database()
+    app["task"] = await TaskController.from_path("tasks.db")
     yield
-    await connection.close()
+    await app["task"].close()
 
 
 async def spreadsheet_controller(app):
