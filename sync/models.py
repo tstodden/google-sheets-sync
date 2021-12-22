@@ -1,4 +1,4 @@
-from enum import Enum, auto
+from enum import Enum
 import uuid
 from dataclasses import dataclass
 from typing import NamedTuple
@@ -6,11 +6,26 @@ from typing import NamedTuple
 import pandas as pd
 
 
-class DataType(Enum):
-    STRING = auto()
-    INT = auto()
-    FLOAT = auto()
-    DATETIME = auto()
+class DataType(str, Enum):
+    STRING = "string"
+    INT = "int"
+    FLOAT = "float"
+    DATETIME = "datetime"
+
+    @classmethod
+    def from_string(cls, string: str) -> "DataType":
+        match string:
+            case "string":
+                dtype = DataType.STRING
+            case "int":
+                dtype = DataType.INT
+            case "float":
+                dtype = DataType.FLOAT
+            case "datetime":
+                dtype = DataType.DATETIME
+            case _:
+                raise ValueError(f"{string} is not a valid datatype")
+        return dtype
 
 
 @dataclass
@@ -35,11 +50,18 @@ class Task:
             uuid=str(uuid.uuid4()),
             spreadsheet_id=dict_["spreadsheet_id"],
             table=dict_["table"],
-            column_def=dict_["column_def"],
+            column_def=_create_column_def(dict_["column_def"]),
             schema=dict_.get("schema"),
             key_list=dict_.get("key_list"),
             column_rename_map=dict_.get("column_rename_map"),
         )
+
+
+def _create_column_def(column_def: dict[str, str]) -> dict[str, DataType]:
+    new_column_def: dict[str, DataType] = dict()
+    for col, dtype in column_def.items():
+        new_column_def[col] = DataType.from_string(dtype)
+    return new_column_def
 
 
 class DataSet(NamedTuple):

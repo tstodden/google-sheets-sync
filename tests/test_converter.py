@@ -1,4 +1,5 @@
 from sync.converter import Converter
+from sync.models import DataType
 
 from . import data
 

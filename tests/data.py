@@ -1,11 +1,11 @@
 import pandas as pd
-from sync.models import DataSet, Sheet, Task, DataType
+from sync.models import DataSet, Sheet, Task
 
 BASIC_TASK = Task.from_dict(
     {
         "spreadsheet_id": "1",
         "table": "test",
-        "column_def": {"animal": DataType.STRING, "description": DataType.STRING},
+        "column_def": {"animal": "string", "description": "string"},
         "key_list": ["animal"],
     }
 )
@@ -55,9 +55,9 @@ MISSING_TASK = Task.from_dict(
         "spreadsheet_id": "1",
         "table": "test",
         "column_def": {
-            "animal": DataType.STRING,
-            "description": DataType.STRING,
-            "friends": DataType.STRING,
+            "animal": "string",
+            "description": "string",
+            "friends": "string",
         },
     }
 )
@@ -87,10 +87,10 @@ DATATYPE_TASK = Task.from_dict(
         "spreadsheet_id": "1",
         "table": "test",
         "column_def": {
-            "animal": DataType.STRING,
-            "description": DataType.STRING,
-            "last_seen": DataType.DATETIME,
-            "lifespan": DataType.FLOAT,
+            "animal": "string",
+            "description": "string",
+            "last_seen": "datetime",
+            "lifespan": "float",
         },
         "key_list": ["animal"],
     }
@@ -120,7 +120,7 @@ RENAME_TASK = Task.from_dict(
     {
         "spreadsheet_id": "1",
         "table": "test",
-        "column_def": {"animal": DataType.STRING, "description": DataType.STRING},
+        "column_def": {"animal": "string", "description": "string"},
         "column_rename_map": {"Pokemon": "animal"},
     }
 )
